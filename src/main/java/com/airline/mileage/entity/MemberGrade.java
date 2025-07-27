@@ -4,7 +4,8 @@ public enum MemberGrade {
     BASIC("일반", 0, 1.0),
     SILVER("실버", 20000, 1.2),
     GOLD("골드", 50000, 1.5),
-    DIAMOND("다이아몬드", 100000, 2.0);
+    DIAMOND("다이아몬드", 100000, 2.0),
+	VIP("VIP", 1000000, 3.0);
     
     private final String displayName;
     private final int requiredMileage;
@@ -29,7 +30,9 @@ public enum MemberGrade {
     }
     
     public static MemberGrade getGradeByMileage(int totalMileage) {
-        if (totalMileage >= DIAMOND.requiredMileage) {
+    	if(totalMileage >= VIP.requiredMileage) {
+    		return VIP;
+    	}else if (totalMileage >= DIAMOND.requiredMileage) {
             return DIAMOND;
         } else if (totalMileage >= GOLD.requiredMileage) {
             return GOLD;

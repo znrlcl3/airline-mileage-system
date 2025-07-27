@@ -3,11 +3,15 @@ package com.airline.mileage.entity;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.Where;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "members")
+@SQLDelete(sql = "UPDATE members SET deleted = true, deleted_at = NOW() WHERE id = ?")
+@Where(clause = "deleted = false")
 public class Member {
     
     @Id
@@ -36,6 +40,12 @@ public class Member {
     @Column(nullable = false)
     private Integer availableMileage = 0;
     
+    @Column(nullable = false)
+    private Boolean deleted = false;
+    
+    @Column
+    private LocalDateTime deletedAt;
+    
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -44,10 +54,8 @@ public class Member {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
     
-    // 기본 생성자
     public Member() {}
     
-    // 생성자
     public Member(String email, String password, String name, String phone) {
         this.email = email;
         this.password = password;
@@ -56,90 +64,45 @@ public class Member {
         this.grade = MemberGrade.BASIC;
         this.totalMileage = 0;
         this.availableMileage = 0;
+        this.deleted = false;
     }
     
-    // Getter, Setter
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
     
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
     
-    public String getEmail() {
-        return email;
-    }
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
     
-    public void setEmail(String email) {
-        this.email = email;
-    }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
     
-    public String getPassword() {
-        return password;
-    }
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
     
-    public void setPassword(String password) {
-        this.password = password;
-    }
+    public MemberGrade getGrade() { return grade; }
+    public void setGrade(MemberGrade grade) { this.grade = grade; }
     
-    public String getName() {
-        return name;
-    }
+    public Integer getTotalMileage() { return totalMileage; }
+    public void setTotalMileage(Integer totalMileage) { this.totalMileage = totalMileage; }
     
-    public void setName(String name) {
-        this.name = name;
-    }
+    public Integer getAvailableMileage() { return availableMileage; }
+    public void setAvailableMileage(Integer availableMileage) { this.availableMileage = availableMileage; }
     
-    public String getPhone() {
-        return phone;
-    }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
     
-    public MemberGrade getGrade() {
-        return grade;
-    }
+    public Boolean getDeleted() { return deleted; }
+    public void setDeleted(Boolean deleted) { this.deleted = deleted; }
     
-    public void setGrade(MemberGrade grade) {
-        this.grade = grade;
-    }
+    public LocalDateTime getDeletedAt() { return deletedAt; }
+    public void setDeletedAt(LocalDateTime deletedAt) { this.deletedAt = deletedAt; }
     
-    public Integer getTotalMileage() {
-        return totalMileage;
-    }
-    
-    public void setTotalMileage(Integer totalMileage) {
-        this.totalMileage = totalMileage;
-    }
-    
-    public Integer getAvailableMileage() {
-        return availableMileage;
-    }
-    
-    public void setAvailableMileage(Integer availableMileage) {
-        this.availableMileage = availableMileage;
-    }
-    
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-    
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-    
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-    
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-    
-    // 비즈니스 메서드
     public void addMileage(Integer mileage) {
         this.totalMileage += mileage;
         this.availableMileage += mileage;
@@ -155,14 +118,33 @@ public class Member {
     }
     
     private void updateGrade() {
-        if (totalMileage >= 100000) {
-            this.grade = MemberGrade.DIAMOND;
-        } else if (totalMileage >= 50000) {
-            this.grade = MemberGrade.GOLD;
-        } else if (totalMileage >= 20000) {
-            this.grade = MemberGrade.SILVER;
-        } else {
-            this.grade = MemberGrade.BASIC;
-        }
+        this.grade = MemberGrade.getGradeByMileage(this.totalMileage);
+    }
+    
+    public void softDelete() {
+        this.deleted = true;
+        this.deletedAt = LocalDateTime.now();
+    }
+    
+    public boolean isDeleted() {
+        return this.deleted;
+    }
+    
+    public void restore() {
+        this.deleted = false;
+        this.deletedAt = null;
+    }
+    
+    @Override
+    public String toString() {
+        return "Member{" +
+                "id=" + id +
+                ", email='" + email + '\'' +
+                ", name='" + name + '\'' +
+                ", grade=" + grade +
+                ", totalMileage=" + totalMileage +
+                ", availableMileage=" + availableMileage +
+                ", deleted=" + deleted +
+                '}';
     }
 }
