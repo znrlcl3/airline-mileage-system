@@ -5,17 +5,19 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.ModelAndView;
 
 import com.airline.mileage.dto.request.MemberRequestDto;
 import com.airline.mileage.dto.request.MileageRequestDto;
@@ -25,7 +27,7 @@ import com.airline.mileage.service.MemberService;
 
 import jakarta.validation.Valid;
 
-@RestController
+@Controller
 @RequestMapping("/api/members")
 @CrossOrigin(origins = "*") 
 public class MemberController {
@@ -45,12 +47,52 @@ public class MemberController {
      * 회원 목록 페이지
      */
     @GetMapping("/view/list")
-    public ModelAndView memberListPage() {
-    	ModelAndView mv = new ModelAndView();
-    	List<MemberResponseDto> members = memberService.getAllMembers();
-        mv.addObject("members", members);
-        mv.setViewName("member/list");
-        return mv;
+    public String memberListPage(Model model) {
+        List<MemberResponseDto> members = memberService.getAllMembers();
+        model.addAttribute("members", members);
+        return "member/list";
+    }
+    
+    /**
+     * 회원 등록 페이지
+     */
+    @GetMapping("/view/create")
+    public String memberCreatePage(Model model) {
+        model.addAttribute("member", new MemberRequestDto());
+        return "member/create";
+    }
+    
+    /**
+     * 회원 등록 처리
+     */
+    @PostMapping("/view/create")
+    public String memberCreateProcess(@Valid @ModelAttribute MemberRequestDto memberDto, 
+                                     BindingResult bindingResult, Model model) {
+        try {
+            if (bindingResult.hasErrors()) {
+                model.addAttribute("member", memberDto);
+                model.addAttribute("error", "입력값을 확인해주세요.");
+                return "member/create";
+            }
+            memberService.createMember(memberDto);
+            return "redirect:/api/members/view/list";
+            
+        } catch (IllegalArgumentException e) {
+            model.addAttribute("member", memberDto);
+            model.addAttribute("error", e.getMessage());
+            return "member/create";
+        }
+    }
+    
+    @GetMapping("/view/{id}")
+    public String memberDetailPage(@PathVariable Long id, Model model) {
+        try {
+            MemberResponseDto member = memberService.getMember(id);
+            model.addAttribute("member", member);
+            return "member/detail";
+        } catch (IllegalArgumentException e) {
+            return "redirect:/api/members/view/list";
+        }
     }
     
     /**
